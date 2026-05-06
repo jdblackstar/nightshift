@@ -15,7 +15,7 @@ def test_doctor_fails_when_config_is_missing(tmp_path: Path) -> None:
     assert not doctor_passed(checks)
 
 
-def test_doctor_checks_config_repos_clis_and_workdir(
+def test_doctor_checks_config_repos_clis_cache_and_workdir(
     tmp_path: Path, monkeypatch
 ) -> None:
     config_path = tmp_path / "config.toml"
@@ -47,12 +47,16 @@ format_check = ""
     monkeypatch.setattr(
         "nightshift.doctor.shutil.which", lambda command: f"/bin/{command}"
     )
+    monkeypatch.setattr(
+        "nightshift.doctor.fetch_cached_provider_usage", lambda provider: None
+    )
 
     checks = run_doctor(config_path, check_auth=False)
 
     assert doctor_passed(checks)
     assert ("config", OK) in {(check.name, check.status) for check in checks}
     assert ("repo repo", OK) in {(check.name, check.status) for check in checks}
+    assert ("codexbar cache", WARN) in {(check.name, check.status) for check in checks}
     assert workdir.exists()
 
 
@@ -74,6 +78,9 @@ def test_doctor_warns_on_unknown_provider_name(tmp_path: Path, monkeypatch) -> N
     )
     monkeypatch.setattr(
         "nightshift.doctor.shutil.which", lambda command: f"/bin/{command}"
+    )
+    monkeypatch.setattr(
+        "nightshift.doctor.fetch_cached_provider_usage", lambda provider: None
     )
 
     checks = run_doctor(config_path, check_auth=False)
@@ -115,6 +122,9 @@ def test_doctor_fails_on_unknown_provider_when_strict(
     monkeypatch.setattr(
         "nightshift.doctor.shutil.which", lambda command: f"/bin/{command}"
     )
+    monkeypatch.setattr(
+        "nightshift.doctor.fetch_cached_provider_usage", lambda provider: None
+    )
 
     checks = run_doctor(
         config_path, check_auth=False, fail_on_unknown_providers=True
@@ -138,6 +148,9 @@ def test_doctor_can_check_github_auth(tmp_path: Path, monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "nightshift.doctor.shutil.which", lambda command: f"/bin/{command}"
+    )
+    monkeypatch.setattr(
+        "nightshift.doctor.fetch_cached_provider_usage", lambda provider: None
     )
 
     monkeypatch.setattr(

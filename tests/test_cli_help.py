@@ -14,6 +14,8 @@ HELP_COMMANDS = [
     (["repos", "remove", "--help"], "Example:"),
     (["repos", "enable", "--help"], "Example:"),
     (["repos", "disable", "--help"], "Example:"),
+    (["providers", "--help"], "Examples:"),
+    (["providers", "usage", "--help"], "Examples:"),
     (["context", "--help"], "Example:"),
     (["config", "--help"], "Example:"),
     (["config", "view", "--help"], "Example:"),

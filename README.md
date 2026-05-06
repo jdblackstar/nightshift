@@ -34,6 +34,7 @@ nightshift init
 nightshift repos add .
 nightshift doctor
 nightshift repos list
+nightshift providers usage
 nightshift config view
 nightshift repo init
 nightshift context
@@ -60,6 +61,24 @@ nightshift repos enable nightshift
 nightshift repos disable nightshift
 ```
 
+Provider usage is read through `codexbar`:
+
+```bash
+nightshift providers usage
+nightshift providers usage cursor
+nightshift providers usage --timeout 5
+nightshift providers usage --source cache
+nightshift providers usage --source live
+```
+
+By default, Nightshift uses `--source auto`: it reads CodexBar's latest widget/history cache first, then falls back to live `codexbar` probes for providers without cached data.
+
+For rolling windows with a reset time and window length, usage output includes reserve when the account is behind pace:
+
+```text
+codex	weekly	86% left	May 7, 2026 at 13:32	43% reserve
+```
+
 `nightshift doctor` checks the local machine before an overnight run:
 
 ```bash
@@ -67,7 +86,7 @@ nightshift doctor
 nightshift doctor --skip-auth
 ```
 
-It verifies the global config, configured repos, required local CLIs, GitHub
-auth, and workdir access.
+It verifies the global config, configured repos, required local CLIs, CodexBar
+cache availability, GitHub auth, and workdir access.
 
 Use one-off commands for setup, automation, and agent handoff data. Use the Textual dashboard only for stateful review and monitoring. The command structure follows the same practical shape as tools like Prime Intellect's CLI: scriptable verbs for automation, grouped config commands, and an interactive terminal surface where it earns its keep.

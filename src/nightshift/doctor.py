@@ -8,6 +8,7 @@ from typing import Literal, Sequence
 from uuid import uuid4
 
 from nightshift.config import load_config
+from nightshift.providers import fetch_cached_provider_usage
 
 
 Status = Literal["ok", "warn", "fail"]
@@ -36,7 +37,7 @@ def run_doctor(
     check_auth: bool = True,
     fail_on_unknown_providers: bool = False,
 ) -> tuple[DoctorCheck, ...]:
-    """Health checks for config, repos, CLIs, workdir, and optional gh auth."""
+    """Health checks for config, repos, CLIs, codexbar cache, workdir, and optional gh auth."""
     config_file = config_path.expanduser().resolve()
     if not config_file.exists():
         return (
@@ -92,6 +93,20 @@ def run_doctor(
                 f"cli {command}", OK if path else FAIL, path or "not found on PATH"
             )
         )
+    cached = []
+    for provider in config.providers.enabled:
+        if provider not in KNOWN_PROVIDER_NAMES:
+            continue
+        usage = fetch_cached_provider_usage(provider)
+        if usage is not None:
+            cached.append(usage.provider)
+    checks.append(
+        DoctorCheck(
+            "codexbar cache",
+            OK if cached else WARN,
+            ", ".join(cached) if cached else "no cached provider usage found",
+        )
+    )
     checks.append(_workdir_check(config.workdir))
     if check_auth:
         checks.append(_github_auth_check())

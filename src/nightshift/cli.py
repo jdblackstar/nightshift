@@ -9,6 +9,12 @@ from nightshift.errors import NightshiftError
 from nightshift.context import render_context
 from nightshift.doctor import doctor_passed, format_doctor_checks, run_doctor
 from nightshift.init import init_global, init_repo_hints
+from nightshift.providers import (
+    DEFAULT_PROVIDERS,
+    DEFAULT_TIMEOUT_SECONDS,
+    fetch_provider_usage_results,
+    format_provider_usage,
+)
 from nightshift.repos import add_repo, list_repos, remove_repo, set_repo_enabled
 from nightshift.tui import run_tui
 
@@ -21,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
             "Common commands:\n"
             "  nightshift init\n"
             "  nightshift repos add .\n"
+            "  nightshift providers usage\n"
             "  nightshift doctor\n"
             "  nightshift config view"
         ),
@@ -161,6 +168,55 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         default=None,
         help="Config path. Defaults to ~/.nightshift/config.toml.",
+    )
+
+    providers_parser = subparsers.add_parser(
+        "providers",
+        help="Inspect configured AI providers.",
+        description="Inspect local AI provider usage as reported by CodexBar.",
+        epilog=(
+            "Examples:\n"
+            "  nightshift providers usage\n"
+            "  nightshift providers usage cursor --source cache"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    providers_subparsers = providers_parser.add_subparsers(
+        dest="providers_command", required=True
+    )
+    providers_usage_parser = providers_subparsers.add_parser(
+        "usage",
+        help="Read provider usage through codexbar.",
+        description=(
+            "Print provider budget remaining. By default this reads CodexBar cache first, "
+            "then falls back to live provider probes."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  nightshift providers usage\n"
+            "  nightshift providers usage cursor\n"
+            "  nightshift providers usage --source cache\n"
+            "  nightshift providers usage codex --source live --timeout 90"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    providers_usage_parser.add_argument(
+        "providers",
+        nargs="*",
+        default=DEFAULT_PROVIDERS,
+        help="Provider names. Defaults to codex claude cursor.",
+    )
+    providers_usage_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=DEFAULT_TIMEOUT_SECONDS,
+        help=f"Per-provider codexbar timeout in seconds. Defaults to {DEFAULT_TIMEOUT_SECONDS}.",
+    )
+    providers_usage_parser.add_argument(
+        "--source",
+        choices=("auto", "cache", "live"),
+        default="auto",
+        help="Usage source. Defaults to auto, which reads CodexBar cache before live codexbar probes.",
     )
 
     context_parser = subparsers.add_parser(
@@ -321,6 +377,16 @@ def main(argv: list[str] | None = None) -> int:
                 plain = f"disabled {change.repo.name}"
                 rich = f"[green]disabled[/green] {_escape_rich_text(change.repo.name)}"
                 _print_status(rich, plain_line=plain)
+                return 0
+
+        if args.command == "providers":
+            if args.providers_command == "usage":
+                usages = fetch_provider_usage_results(
+                    args.providers,
+                    timeout_seconds=args.timeout,
+                    source=args.source,
+                )
+                print(format_provider_usage(usages))
                 return 0
 
         if args.command == "context":
