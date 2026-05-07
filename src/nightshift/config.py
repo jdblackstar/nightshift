@@ -14,7 +14,6 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by older system Pyth
 
 CONFIG_DIR = ".nightshift"
 GLOBAL_CONFIG_FILE = "config.toml"
-REPO_HINT_DIR = ".nightshift"
 
 
 @dataclass(frozen=True)

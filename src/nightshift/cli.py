@@ -283,9 +283,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.repos_command == "add":
                 change = add_repo(Path(args.path), cfg)
                 preposition = "in" if change.action == "exists" else "to"
-                _print_status(
-                    f"[green]{change.action}[/green] {change.repo.name} {preposition} {change.config_path}"
+                plain = f"{change.action} {change.repo.name} {preposition} {change.config_path}"
+                rich = (
+                    f"[green]{change.action}[/green] "
+                    f"{_escape_rich_text(change.repo.name)} {preposition} "
+                    f"{_escape_rich_text(str(change.config_path))}"
                 )
+                _print_status(rich, plain_line=plain)
                 return 0
             if args.repos_command == "list":
                 repos = list_repos(cfg)
@@ -298,17 +302,24 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
             if args.repos_command == "remove":
                 change = remove_repo(args.repo, cfg)
-                _print_status(
-                    f"[green]removed[/green] {change.repo.name} from {change.config_path}"
+                plain = f"removed {change.repo.name} from {change.config_path}"
+                rich = (
+                    f"[green]removed[/green] {_escape_rich_text(change.repo.name)} "
+                    f"from {_escape_rich_text(str(change.config_path))}"
                 )
+                _print_status(rich, plain_line=plain)
                 return 0
             if args.repos_command == "enable":
                 change = set_repo_enabled(args.repo, True, cfg)
-                _print_status(f"[green]enabled[/green] {change.repo.name}")
+                plain = f"enabled {change.repo.name}"
+                rich = f"[green]enabled[/green] {_escape_rich_text(change.repo.name)}"
+                _print_status(rich, plain_line=plain)
                 return 0
             if args.repos_command == "disable":
                 change = set_repo_enabled(args.repo, False, cfg)
-                _print_status(f"[green]disabled[/green] {change.repo.name}")
+                plain = f"disabled {change.repo.name}"
+                rich = f"[green]disabled[/green] {_escape_rich_text(change.repo.name)}"
+                _print_status(rich, plain_line=plain)
                 return 0
 
         if args.command == "context":
@@ -345,13 +356,26 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
-def _print_status(markup: str) -> None:
+def _escape_rich_text(text: str) -> str:
+    """Return ``text`` safe to embed in Rich markup strings."""
+    try:
+        from rich.markup import escape
+    except ModuleNotFoundError:
+        return text
+    return escape(text)
+
+
+def _print_status(rich_line: str, *, plain_line: str | None = None) -> None:
     try:
         from rich.console import Console
     except ModuleNotFoundError:
-        print(markup.replace("[green]", "").replace("[/green]", ""))
+        print(
+            plain_line
+            if plain_line is not None
+            else rich_line.replace("[green]", "").replace("[/green]", "")
+        )
         return
-    Console(highlight=False, width=10_000, soft_wrap=True).print(markup)
+    Console(highlight=False, width=10_000, soft_wrap=True).print(rich_line)
 
 
 if __name__ == "__main__":
