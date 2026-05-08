@@ -138,8 +138,8 @@ def _detect_command_for_repo(
     cargo_command: str | None,
 ) -> str:
     """Pick a command using the same ecosystem order as test detection."""
-    if (path / "pyproject.toml").exists() and pyproject_command:
-        return pyproject_command
+    if (path / "pyproject.toml").exists():
+        return pyproject_command or ""
     if (path / "package.json").exists():
         return f"npm run {npm_script}"
     if (path / "Cargo.toml").exists() and cargo_command:
