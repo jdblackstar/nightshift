@@ -35,7 +35,7 @@ def add_repo(repo_path: Path, config_path: Path | None = None) -> RepoChange:
         typecheck_command=_detect_typecheck_command(path),
         format_check_command=_detect_format_check_command(path),
     )
-    _append_repo(config_file, repo)
+    _rewrite_repos(config_file, list(config.repos) + [repo])
     return RepoChange("added", repo, config_file)
 
 
@@ -180,14 +180,6 @@ def _detect_format_check_command(path: Path) -> str:
         pyproject_command="uv run ruff format --check .",
         npm_script="format:check",
         cargo_command="cargo fmt --check",
-    )
-
-
-def _append_repo(config_path: Path, repo: RepoConfig) -> None:
-    existing = config_path.read_text(encoding="utf-8").rstrip()
-    config_path.write_text(
-        existing + "\n\n" + _render_repo(repo),
-        encoding="utf-8",
     )
 
 

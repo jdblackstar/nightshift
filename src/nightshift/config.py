@@ -2,12 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover - exercised by older system Pythons.
-    tomllib = None  # type: ignore[assignment]
+import tomllib
 
 
 CONFIG_DIR = ".nightshift"
@@ -116,7 +111,7 @@ def load_config(config_path: Path | None = None) -> NightshiftConfig:
         raise FileNotFoundError(f"{path} not found. Run `nightshift init` first.")
 
     text = path.read_text(encoding="utf-8")
-    data = tomllib.loads(text) if tomllib is not None else _loads_minimal_toml(text)
+    data = tomllib.loads(text)
 
     runtime = data.get("runtime", {})
     pull_requests = data.get("pull_requests", {})
@@ -282,82 +277,3 @@ def _parse_repos(raw_repos: object) -> list[RepoConfig]:
             )
         )
     return repos
-
-
-def _loads_minimal_toml(text: str) -> dict[str, Any]:
-    """Parse the small TOML subset written by `nightshift init`.
-
-    This fallback exists for older test runners. Python 3.11+ uses tomllib.
-    """
-    data: dict[str, Any] = {}
-    current: dict[str, Any] = data
-    pending_key: str | None = None
-    pending_items: list[str] = []
-
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-
-        if pending_key is not None:
-            if line == "]":
-                current[pending_key] = pending_items
-                pending_key = None
-                pending_items = []
-                continue
-            pending_items.append(_parse_scalar(line.rstrip(",").strip()))
-            continue
-
-        if line == "[[repos]]":
-            repo: dict[str, Any] = {}
-            data.setdefault("repos", []).append(repo)
-            current = repo
-            continue
-
-        if line.startswith("[") and line.endswith("]"):
-            section = line[1:-1].strip()
-            if section == "repos.commands":
-                repos = data.setdefault("repos", [])
-                if repos:
-                    current = repos[-1].setdefault("commands", {})
-                continue
-            if "." in section:
-                parent, child = section.split(".", 1)
-                current = data.setdefault(parent, {}).setdefault(child, {})
-                continue
-            current = data.setdefault(section, {})
-            continue
-
-        if "=" not in line:
-            continue
-
-        key, value = [part.strip() for part in line.split("=", 1)]
-        if value == "[":
-            pending_key = key
-            pending_items = []
-            continue
-        current[key] = _parse_scalar(value.rstrip(","))
-
-    return data
-
-
-def _parse_scalar(value: str) -> Any:
-    if value == "true":
-        return True
-    if value == "false":
-        return False
-    if value.startswith('"') and value.endswith('"'):
-        return value[1:-1]
-    if value.startswith("[") and value.endswith("]"):
-        inner = value[1:-1].strip()
-        if not inner:
-            return []
-        return [_parse_scalar(part.strip()) for part in inner.split(",")]
-    try:
-        return int(value)
-    except ValueError:
-        pass
-    try:
-        return float(value)
-    except ValueError:
-        return value
