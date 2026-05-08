@@ -28,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--repo",
+        dest="repo_path",
         default=".",
         help="Repository path for interactive commands. Defaults to the current directory.",
     )
@@ -341,7 +342,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if doctor_passed(checks) else 1
 
         if args.command in {"dashboard", "tui"}:
-            return run_tui(Path(args.path or args.repo))
+            return run_tui(Path(args.path or args.repo_path))
 
     except (
         NightshiftError,
