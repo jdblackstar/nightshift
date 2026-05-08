@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from nightshift.errors import NightshiftConfigError
-
 try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover - exercised by older system Pythons.
@@ -74,13 +72,6 @@ class WorkerConfig:
 @dataclass(frozen=True)
 class WorkersConfig:
     by_provider: dict[str, WorkerConfig]
-
-    def get(self, provider: str) -> WorkerConfig:
-        if provider not in self.by_provider:
-            raise NightshiftConfigError(
-                f"worker not configured for provider: {provider}"
-            )
-        return self.by_provider[provider]
 
 
 @dataclass(frozen=True)
@@ -364,5 +355,9 @@ def _parse_scalar(value: str) -> Any:
         return [_parse_scalar(part.strip()) for part in inner.split(",")]
     try:
         return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
     except ValueError:
         return value
