@@ -19,6 +19,9 @@ def test_add_repo_creates_config_and_repo_entry(tmp_path: Path) -> None:
     assert change.action == "added"
     assert change.repo.name == "project"
     assert change.repo.test_command == "uv run pytest"
+    assert change.repo.lint_command == "uv run ruff check ."
+    assert change.repo.typecheck_command == ""
+    assert change.repo.format_check_command == "uv run ruff format --check ."
     assert config.repos[0].path == repo.resolve()
 
 

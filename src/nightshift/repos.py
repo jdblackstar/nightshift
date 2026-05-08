@@ -130,32 +130,57 @@ def _git_remote(path: Path) -> str | None:
     return remote or None
 
 
-def _detect_test_command(path: Path) -> str:
-    if (path / "pyproject.toml").exists():
-        return "uv run pytest"
+def _detect_command_for_repo(
+    path: Path,
+    *,
+    pyproject_command: str | None,
+    npm_script: str,
+    cargo_command: str | None,
+) -> str:
+    """Pick a command using the same ecosystem order as test detection."""
+    if (path / "pyproject.toml").exists() and pyproject_command:
+        return pyproject_command
     if (path / "package.json").exists():
-        return "npm test"
-    if (path / "Cargo.toml").exists():
-        return "cargo test"
+        return f"npm run {npm_script}"
+    if (path / "Cargo.toml").exists() and cargo_command:
+        return cargo_command
     return ""
+
+
+def _detect_test_command(path: Path) -> str:
+    return _detect_command_for_repo(
+        path,
+        pyproject_command="uv run pytest",
+        npm_script="test",
+        cargo_command="cargo test",
+    )
 
 
 def _detect_lint_command(path: Path) -> str:
-    if (path / "package.json").exists():
-        return "npm run lint"
-    return ""
+    return _detect_command_for_repo(
+        path,
+        pyproject_command="uv run ruff check .",
+        npm_script="lint",
+        cargo_command="cargo clippy",
+    )
 
 
 def _detect_typecheck_command(path: Path) -> str:
-    if (path / "package.json").exists():
-        return "npm run typecheck"
-    return ""
+    return _detect_command_for_repo(
+        path,
+        pyproject_command=None,
+        npm_script="typecheck",
+        cargo_command="cargo check",
+    )
 
 
 def _detect_format_check_command(path: Path) -> str:
-    if (path / "package.json").exists():
-        return "npm run format:check"
-    return ""
+    return _detect_command_for_repo(
+        path,
+        pyproject_command="uv run ruff format --check .",
+        npm_script="format:check",
+        cargo_command="cargo fmt --check",
+    )
 
 
 def _append_repo(config_path: Path, repo: RepoConfig) -> None:
