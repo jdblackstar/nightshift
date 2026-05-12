@@ -121,6 +121,10 @@ def fetch_provider_usage_results(
                 if msg.startswith(pfx):
                     msg = msg.removeprefix(pfx)
                 results[provider] = ProviderUsageError(provider=provider, message=msg)
+            except Exception as exc:
+                results[provider] = ProviderUsageError(
+                    provider=provider, message=str(exc)
+                )
 
     return tuple(results[provider] for provider in ordered_providers)
 
