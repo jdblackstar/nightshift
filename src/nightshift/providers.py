@@ -121,6 +121,10 @@ def fetch_provider_usage_results(
                 if msg.startswith(pfx):
                     msg = msg.removeprefix(pfx)
                 results[provider] = ProviderUsageError(provider=provider, message=msg)
+            except (json.JSONDecodeError, OSError) as exc:
+                results[provider] = ProviderUsageError(
+                    provider=provider, message=str(exc)
+                )
             except Exception as exc:
                 results[provider] = ProviderUsageError(
                     provider=provider, message=str(exc)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 
 from nightshift.providers import (
+    ProviderUsage,
     ProviderUsageError,
     fetch_cached_provider_usage,
     fetch_provider_usage,
@@ -126,6 +127,79 @@ def test_fetch_provider_usage_surfaces_codexbar_errors() -> None:
         assert str(exc) == "cursor: not logged in"
     else:
         raise AssertionError("expected RuntimeError")
+
+
+def test_fetch_provider_usage_results_handles_malformed_json() -> None:
+    def runner(args):
+        provider = args[args.index("--provider") + 1]
+        if provider == "claude":
+            return subprocess.CompletedProcess(
+                args=args, returncode=0, stdout="not json", stderr=""
+            )
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout=f"""
+[
+  {{
+    "provider": "{provider}",
+    "source": "web",
+    "usage": {{
+      "primary": {{"usedPercent": 1, "resetDescription": "soon"}},
+      "secondary": null,
+      "tertiary": null
+    }}
+  }}
+]
+""",
+            stderr="",
+        )
+
+    results = fetch_provider_usage_results(
+        ("codex", "claude", "cursor"),
+        runner=runner,
+        source="live",
+    )
+
+    assert [result.provider for result in results] == ["codex", "claude", "cursor"]
+    assert isinstance(results[0], ProviderUsage)
+    assert isinstance(results[1], ProviderUsageError)
+    assert isinstance(results[2], ProviderUsage)
+
+
+def test_fetch_provider_usage_results_handles_os_errors() -> None:
+    def runner(args):
+        provider = args[args.index("--provider") + 1]
+        if provider == "cursor":
+            raise FileNotFoundError("codexbar not found")
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout=f"""
+[
+  {{
+    "provider": "{provider}",
+    "source": "web",
+    "usage": {{
+      "primary": {{"usedPercent": 1, "resetDescription": "soon"}},
+      "secondary": null,
+      "tertiary": null
+    }}
+  }}
+]
+""",
+            stderr="",
+        )
+
+    results = fetch_provider_usage_results(
+        ("codex", "claude", "cursor"),
+        runner=runner,
+        source="live",
+    )
+
+    assert [result.provider for result in results] == ["codex", "claude", "cursor"]
+    assert isinstance(results[2], ProviderUsageError)
+    assert results[2].message == "codexbar not found"
 
 
 def test_fetch_provider_usage_results_returns_partial_errors() -> None:
