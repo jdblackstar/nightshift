@@ -5,6 +5,7 @@ import subprocess
 from nightshift.providers import (
     ProviderUsage,
     ProviderUsageError,
+    UsageWindow,
     fetch_cached_provider_usage,
     fetch_provider_usage,
     fetch_provider_usage_results,
@@ -414,3 +415,25 @@ def test_format_provider_usage_includes_reserve_when_behind_pace(
     assert format_provider_usage((usage,)) == (
         "codex\tweekly\t86% left\tMay 7, 2026 at 13:32\t43% reserve"
     )
+
+
+def test_format_provider_usage_omits_reserve_when_rounded_to_zero() -> None:
+    window = UsageWindow(
+        name="weekly",
+        used_percent=50,
+        resets_at="2026-05-07T20:32:34Z",
+        reset_description="reset",
+        window_minutes=1000,
+    )
+    usage = ProviderUsage(
+        provider="codex",
+        source="cache",
+        windows=(window,),
+        updated_at="2026-05-07T12:13:34Z",
+        account="",
+    )
+
+    reserve = reserve_percent(window, usage.updated_at)
+    assert 0 < reserve < 0.5
+    assert round(reserve) == 0
+    assert format_provider_usage((usage,)) == "codex\tweekly\t50% left\treset"

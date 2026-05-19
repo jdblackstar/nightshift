@@ -205,7 +205,7 @@ def format_provider_usage(usages: Sequence[ProviderUsageResult]) -> str:
                 for window in u.windows:
                     reset = window.reset_description or window.resets_at or "unknown reset"
                     reserve = reserve_percent(window, u.updated_at)
-                    reserve_text = f"\t{round(reserve)}% reserve" if reserve > 0 else ""
+                    reserve_text = f"\t{round(reserve)}% reserve" if round(reserve) > 0 else ""
                     remaining = remaining_percent(window)
                     lines.append(
                         f"{u.provider}\t{window.name}\t{remaining}% left\t{reset}{reserve_text}"
