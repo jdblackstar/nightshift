@@ -101,7 +101,7 @@ def fetch_provider_usage_results(
     if not live_providers:
         return tuple(results[provider] for provider in ordered_providers)
 
-    with ThreadPoolExecutor(max_workers=max(1, len(ordered_providers))) as executor:
+    with ThreadPoolExecutor(max_workers=max(1, len(live_providers))) as executor:
         future_to_provider = {
             executor.submit(fetch_one_provider_usage, provider, runner=run): provider
             for provider in live_providers
