@@ -10,7 +10,6 @@ from typing import Iterator
 from uuid import uuid4
 
 
-STATE_DIR = "state"
 RESERVATIONS_FILE = "reservations.json"
 RESERVATIONS_LOCK = "reservations.lock"
 ACTIVE = "active"
