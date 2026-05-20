@@ -4,13 +4,20 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from nightshift.config import NightshiftConfig, WorkerConfig
-from nightshift.errors import NightshiftConfigError
+from nightshift.errors import NightshiftError
 
 
 @dataclass(frozen=True)
 class WorkerInvocation:
     command: list[str]
     cwd: Path
+
+
+def _worker_config(config: NightshiftConfig, provider: str) -> WorkerConfig:
+    worker = config.workers.by_provider.get(provider)
+    if worker is None:
+        raise NightshiftError(f"worker not configured for provider: {provider}")
+    return worker
 
 
 def worker_invocation(
@@ -28,17 +35,17 @@ def worker_command(
 ) -> list[str]:
     match provider:
         case "codex":
-            return _codex_command(config.workers.get(provider), workspace, prompt)
+            return _codex_command(_worker_config(config, provider), workspace, prompt)
         case "claude":
-            return _claude_command(config.workers.get(provider), workspace, prompt)
+            return _claude_command(_worker_config(config, provider), workspace, prompt)
         case "cursor":
-            return _cursor_command(config.workers.get(provider), workspace, prompt)
+            return _cursor_command(_worker_config(config, provider), workspace, prompt)
         case _:
-            raise NightshiftConfigError(f"unsupported worker provider: {provider}")
+            raise NightshiftError(f"unsupported worker provider: {provider}")
 
 
 def worker_budget_window(provider: str, config: NightshiftConfig) -> str:
-    return config.workers.get(provider).budget_window
+    return _worker_config(config, provider).budget_window
 
 
 def _codex_command(worker: WorkerConfig, workspace: Path, prompt: str) -> list[str]:

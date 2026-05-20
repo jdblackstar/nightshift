@@ -4,7 +4,7 @@ import pytest
 
 from nightshift.cli import main
 from nightshift.config import load_config
-from nightshift.errors import NightshiftConfigError
+from nightshift.errors import NightshiftError
 from nightshift.init import init_global
 from nightshift.workers import (
     worker_budget_window,
@@ -19,9 +19,9 @@ def test_init_writes_explicit_workers(tmp_path: Path) -> None:
     config = load_config(config_path)
 
     assert tuple(config.workers.by_provider) == ("codex", "claude", "cursor")
-    assert config.workers.get("codex").budget_window == "weekly"
-    assert config.workers.get("claude").budget_window == "weekly"
-    assert config.workers.get("cursor").model == "composer-2"
+    assert config.workers.by_provider["codex"].budget_window == "weekly"
+    assert config.workers.by_provider["claude"].budget_window == "weekly"
+    assert config.workers.by_provider["cursor"].model == "composer-2"
     assert worker_budget_window("cursor", config) == "Auto"
     assert worker_budget_window("codex", config) == "weekly"
 
@@ -128,7 +128,7 @@ def test_worker_command_rejects_unsupported_provider(tmp_path: Path) -> None:
     init_global(config_path)
     config = load_config(config_path)
 
-    with pytest.raises(NightshiftConfigError, match="unsupported worker provider: unknown"):
+    with pytest.raises(NightshiftError, match="unsupported worker provider: unknown"):
         worker_command("unknown", config, tmp_path / "repo", "do the task")
 
 
@@ -148,7 +148,7 @@ budget_window = "weekly"
     config = load_config(config_path)
 
     with pytest.raises(
-        NightshiftConfigError, match="worker not configured for provider: cursor"
+        NightshiftError, match="worker not configured for provider: cursor"
     ):
         worker_command("cursor", config, tmp_path / "repo", "do the task")
 

@@ -558,7 +558,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "workers":
             if args.workers_command == "command":
                 config = load_config(Path(args.config) if args.config else None)
-                workspace = Path(args.worker_repo or args.repo)
+                workspace = Path(args.worker_repo or args.repo_path)
                 invocation = worker_invocation(
                     args.provider,
                     config,

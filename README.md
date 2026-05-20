@@ -9,7 +9,8 @@ It is not here to invent features. It looks for the following in configured repo
 - GitHub issues labeled `nightshift:*`
 - review comments or docs tasks explicitly tagged for Nightshift
 
-The intended output unit is one draft pull request per task.
+When Nightshift runs work, the intended output unit is one draft pull request
+per task.
 
 ## First Commands
 
@@ -158,6 +159,16 @@ nightshift workers command codex --repo .
 nightshift workers command claude --repo .
 nightshift workers command cursor --repo . --prompt "fix failing tests"
 ```
+
+## Handoff Notes
+
+Repo-local handoff files are intentionally plain text. They should describe what
+Nightshift may pick up, what it must leave alone, and how another agent should
+mark work for a later overnight pass.
+
+Provider control is documented separately in `docs/provider-control.md`. Treat
+that file as implementation notes for how far each provider CLI can be steered:
+start a task, resume a session, stream structured events, or stop gracefully.
 
 Use one-off commands for setup, automation, and agent handoff data. Use the
 Textual dashboard only for stateful review and monitoring.

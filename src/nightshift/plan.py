@@ -144,7 +144,7 @@ def _provider_budget(
             status=f"error: worker not configured for provider: {u.provider}",
         )
 
-    worker = config.workers.get(u.provider)
+    worker = config.workers.by_provider[u.provider]
 
     window = next(
         (w for w in u.windows if w.name == worker.budget_window),
